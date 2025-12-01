@@ -1,0 +1,70 @@
+# ================================================
+# PlexSync AI - Backend Dependencies
+# ================================================
+
+# Core Framework
+fastapi[all]==0.110.0
+uvicorn[standard]==0.27.1
+python-multipart==0.0.9
+
+# Database
+sqlmodel==0.0.16
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Redis & Caching
+redis==5.0.1
+hiredis==2.3.2
+
+# Background Jobs
+celery[redis]==5.3.6
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.1
+
+# HTTP Client
+httpx==0.26.0
+requests==2.31.0
+
+# AI & ML
+openai==1.12.0
+scikit-learn==1.4.0
+pandas==2.2.0
+numpy==1.26.4
+
+# PDF & Image Processing
+pillow==10.2.0
+pdf2image==1.17.0
+pypdf==4.0.2
+
+# Validation & Serialization
+pydantic==2.6.1
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2024.1
+
+# Monitoring & Logging
+sentry-sdk[fastapi]==1.40.0
+loguru==0.7.2
+
+# Testing
+pytest==8.0.0
+pytest-asyncio==0.23.4
+pytest-cov==4.1.0
+httpx==0.26.0  # For async testing
+faker==23.1.0
+
+# Development
+black==24.1.1
+flake8==7.0.0
+mypy==1.8.0
+pre-commit==3.6.0
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.5.9
