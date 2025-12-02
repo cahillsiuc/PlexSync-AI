@@ -121,3 +121,21 @@ dmypy.json
 *.temp
 *.bak
 *.swp
+
+# Frontend - Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Frontend - Build
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Frontend - Environment
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local

@@ -8,6 +8,20 @@ from pathlib import Path
 import base64
 from config import settings
 from loguru import logger
+try:
+    from pdf2image import convert_from_path
+    PDF2IMAGE_AVAILABLE = True
+except ImportError:
+    PDF2IMAGE_AVAILABLE = False
+
+try:
+    from pypdf import PdfReader
+    PYPDF_AVAILABLE = True
+except ImportError:
+    PYPDF_AVAILABLE = False
+
+from PIL import Image
+import io
 
 class AIParser:
     """
@@ -50,12 +64,84 @@ class AIParser:
             }
         """
         try:
-            # Read file as base64
-            with open(file_path, "rb") as f:
-                file_data = base64.b64encode(f.read()).decode()
-
             # Determine file type
             file_type = Path(file_path).suffix.lower().replace(".", "")
+            
+            # Handle PDF files - convert to image
+            if file_type == "pdf":
+                pdf_converted = False
+                # Try pdf2image first (requires Poppler)
+                if PDF2IMAGE_AVAILABLE:
+                    try:
+                        # Convert PDF first page to image
+                        images = convert_from_path(file_path, first_page=1, last_page=1, dpi=200)
+                        if not images:
+                            raise Exception("Failed to convert PDF to image")
+                        
+                        # Convert PIL Image to base64
+                        img_buffer = io.BytesIO()
+                        images[0].save(img_buffer, format='PNG')
+                        img_buffer.seek(0)
+                        file_data = base64.b64encode(img_buffer.read()).decode()
+                        file_type = "png"  # Use PNG format for converted PDFs
+                        pdf_converted = True
+                        logger.debug(f"Converted PDF to PNG image for parsing")
+                    except Exception as e:
+                        logger.warning(f"pdf2image failed (Poppler may not be installed): {e}")
+                        pdf_converted = False
+                
+                # Fallback: Extract text from PDF and use text-only mode
+                if not pdf_converted:
+                    if PYPDF_AVAILABLE:
+                        try:
+                            logger.info("Using text extraction fallback for PDF (Poppler not available)")
+                            reader = PdfReader(file_path)
+                            text_content = ""
+                            for page in reader.pages[:3]:  # First 3 pages
+                                text_content += page.extract_text() + "\n"
+                            
+                            if not text_content.strip():
+                                return {
+                                    "error": "PDF appears to be image-based. Install Poppler for pdf2image to process image PDFs.",
+                                    "confidence": 0.0
+                                }
+                            
+                            # Use text-only mode with extracted text
+                            response = await self.client.chat.completions.create(
+                                model=self.model,
+                                messages=[
+                                    {
+                                        "role": "system",
+                                        "content": "You are an expert at extracting structured data from invoices."
+                                    },
+                                    {
+                                        "role": "user",
+                                        "content": self._create_extraction_prompt() + f"\n\nExtract data from this invoice text:\n\n{text_content}"
+                                    }
+                                ],
+                                max_tokens=self.max_tokens,
+                                temperature=self.temperature
+                            )
+                            
+                            result = self._parse_response(response)
+                            logger.success(f"Parsed invoice from PDF text: {result.get('invoice_number')}")
+                            return result
+                            
+                        except Exception as e:
+                            logger.error(f"PDF text extraction failed: {e}")
+                            return {
+                                "error": f"PDF text extraction failed: {str(e)}",
+                                "confidence": 0.0
+                            }
+                    else:
+                        return {
+                            "error": "PDF processing requires either Poppler (for pdf2image) or pypdf (for text extraction). Neither is available.",
+                            "confidence": 0.0
+                        }
+            else:
+                # Read image file as base64
+                with open(file_path, "rb") as f:
+                    file_data = base64.b64encode(f.read()).decode()
 
             # Create prompt
             prompt = self._create_extraction_prompt()

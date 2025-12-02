@@ -26,22 +26,15 @@ async def test_get_received_invoices():
 
     # Mock the _request method
     with patch.object(client, '_request', new_callable=AsyncMock) as mock_request:
-        mock_request.return_value = {
-            "invoices": [
-                {
-                    "id": "plex-001",
-                    "invoice_number": "RECEIVED",
-                    "po_number": "PO-2024-100",
-                    "total_amount": 1500.00
-                },
-                {
-                    "id": "plex-002",
-                    "invoice_number": "INV-999",
-                    "po_number": "PO-2024-100",
-                    "total_amount": 1500.00
-                }
-            ]
-        }
+        # Mock should return only RECEIVED invoices since the API filters by invoiceNumber=Received
+        mock_request.return_value = [
+            {
+                "id": "plex-001",
+                "invoice_number": "RECEIVED",
+                "po_number": "PO-2024-100",
+                "total_amount": 1500.00
+            }
+        ]
 
         result = await client.get_received_invoices("PO-2024-100")
 

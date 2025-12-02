@@ -28,15 +28,23 @@ app.add_middleware(
 # Create database tables on startup
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup"""
+    """Initialize database and start email worker on startup"""
     logger.info("Starting PlexSync AI...")
     create_db_and_tables()
     logger.success("Database initialized")
+    
+    # Start email worker (PRIMARY DRIVER)
+    from core.email_worker import email_worker
+    email_worker.start()
+    logger.success("Email worker started - invoices will be automatically processed from email")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
     logger.info("Shutting down PlexSync AI...")
+    # Stop email worker
+    from core.email_worker import email_worker
+    email_worker.stop()
 
 # Health check endpoint
 @app.get("/health")

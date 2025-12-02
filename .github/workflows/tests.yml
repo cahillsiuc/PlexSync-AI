@@ -56,6 +56,13 @@ jobs:
           STORAGE_PATH=./test_storage
           EOF
 
+      - name: Initialize database schema
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        run: |
+          python -c "from db.session import create_db_and_tables; create_db_and_tables()"
+
       - name: Run tests
         working-directory: ./backend
         env:
@@ -66,7 +73,7 @@ jobs:
           PLEX_API_KEY: test-plex-key
           OPENAI_API_KEY: test-openai-key
         run: |
-          pytest tests/ -v --cov=backend --cov-report=xml --cov-report=term --tb=short
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=term --tb=short
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -109,4 +116,4 @@ jobs:
       - name: Type checking with mypy
         working-directory: ./backend
         run: |
-          mypy . --ignore-missing-imports || true
+          mypy . --ignore-missing-imports

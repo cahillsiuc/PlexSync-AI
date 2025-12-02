@@ -105,9 +105,10 @@ def test_full_invoice_workflow(authenticated_client, temp_storage):
         assert sync_data["success"] is True
 
     # Step 5: Verify sync operation was logged
+    from sqlmodel import select
+    from models import SyncOperation
     sync_ops = session.exec(
-        "SELECT * FROM sync_operations WHERE vendor_invoice_id = :invoice_id",
-        {"invoice_id": invoice_id}
+        select(SyncOperation).where(SyncOperation.vendor_invoice_id == invoice_id)
     ).all()
     assert len(sync_ops) > 0
 

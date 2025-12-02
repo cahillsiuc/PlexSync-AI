@@ -66,10 +66,12 @@ def client_fixture(session: Session):
     mock_settings.openai_temperature = 0.1
     mock_settings.plex_api_url = "https://api.test"
     mock_settings.plex_api_key = "test-key"
+    mock_settings.plex_api_key_header = "X-Plex-Connect-Api-Key"
     mock_settings.plex_timeout = 30
     mock_settings.plex_retry_attempts = 3
-    mock_settings.plex_invoice_endpoint = "/invoices"
-    mock_settings.plex_po_endpoint = "/pos"
+    mock_settings.plex_invoice_endpoint = "/accounting/v1/ap-invoices"
+    mock_settings.plex_po_endpoint = "/purchasing/v1/purchase-orders"
+    mock_settings.plex_vendor_endpoint = "/vendors"
     
     # Patch config module before any imports
     with patch.dict('sys.modules', {'config': MagicMock(settings=mock_settings)}):

@@ -13,6 +13,7 @@ from core.matcher import po_matcher
 from core.learning import learning_system
 from datetime import datetime, timezone
 from loguru import logger
+import httpx
 
 router = APIRouter()
 
@@ -20,6 +21,32 @@ router = APIRouter()
 class SyncRequest(BaseModel):
     vendor_invoice_id: int
     po_number: str
+
+
+@router.get("/purchase-order/{po_number}")
+async def get_purchase_order(
+    po_number: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get purchase order details from Plex"""
+    try:
+        po_data = await plex_client.get_purchase_order(po_number)
+        
+        # Handle array response (Plex API may return array)
+        if isinstance(po_data, list):
+            if len(po_data) == 0:
+                raise HTTPException(status_code=404, detail=f"Purchase order {po_number} not found")
+            po_data = po_data[0]
+        
+        return po_data
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Purchase order {po_number} not found in Plex")
+        logger.error(f"Plex API error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch purchase order: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error fetching purchase order: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch purchase order: {str(e)}")
 
 
 @router.post("")

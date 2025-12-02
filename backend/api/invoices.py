@@ -1,7 +1,7 @@
 """
 Invoice API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Body
 from sqlmodel import Session, select
 from typing import List, Optional
 from models import VendorInvoice
@@ -122,8 +122,8 @@ async def get_invoice(
 @router.patch("/{invoice_id}")
 async def update_invoice(
     invoice_id: int,
-    invoice_number: Optional[str] = None,
-    vendor_name: Optional[str] = None,
+    invoice_number: Optional[str] = Body(None),
+    vendor_name: Optional[str] = Body(None),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):

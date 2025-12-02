@@ -20,35 +20,54 @@ async def get_dashboard_stats(
     # Total invoices
     total_invoices = session.exec(
         select(func.count(VendorInvoice.id))
+    ).one() or 0
+    
+    # Count invoices by status
+    pending_sync = session.exec(
+        select(func.count(VendorInvoice.id)).where(
+            VendorInvoice.status.in_(["received", "parsed", "matched"])
+        )
+    ).one() or 0
+    
+    synced = session.exec(
+        select(func.count(VendorInvoice.id)).where(VendorInvoice.status == "synced")
+    ).one() or 0
+    
+    failed = session.exec(
+        select(func.count(VendorInvoice.id)).where(VendorInvoice.status == "failed")
+    ).one() or 0
+    
+    # Total amount (sum of all invoice amounts)
+    total_amount_result = session.exec(
+        select(func.sum(VendorInvoice.total_amount))
     ).one()
+    total_amount = float(total_amount_result) if total_amount_result else 0.0
     
-    # Invoices by status
-    status_counts = {}
-    for status in ["received", "parsed", "matched", "synced", "failed"]:
-        count = session.exec(
-            select(func.count(VendorInvoice.id)).where(VendorInvoice.status == status)
-        ).one()
-        status_counts[status] = count
-    
-    # Successful syncs
-    successful_syncs = session.exec(
-        select(func.count(SyncOperation.id)).where(SyncOperation.success == True)
-    ).one()
-    
-    # Total syncs
-    total_syncs = session.exec(select(func.count(SyncOperation.id))).one()
-    
-    # Average confidence
-    avg_confidence = session.exec(
-        select(func.avg(VendorInvoice.confidence_score))
-    ).one() or 0.0
+    # Recent invoices (last 10)
+    recent_invoices = session.exec(
+        select(VendorInvoice)
+        .order_by(VendorInvoice.created_at.desc())
+        .limit(10)
+    ).all()
     
     return {
         "total_invoices": total_invoices,
-        "status_counts": status_counts,
-        "successful_syncs": successful_syncs,
-        "total_syncs": total_syncs,
-        "sync_success_rate": (successful_syncs / total_syncs * 100) if total_syncs > 0 else 0,
-        "average_confidence": float(avg_confidence)
+        "pending_sync": pending_sync,
+        "synced": synced,
+        "failed": failed,
+        "total_amount": total_amount,
+        "recent_invoices": [
+            {
+                "id": inv.id,
+                "invoice_number": inv.invoice_number,
+                "vendor_name": inv.vendor_name,
+                "invoice_date": inv.invoice_date.isoformat() if inv.invoice_date else None,
+                "total_amount": float(inv.total_amount) if inv.total_amount else None,
+                "status": inv.status,
+                "created_at": inv.created_at.isoformat() if inv.created_at else None,
+                "updated_at": inv.updated_at.isoformat() if inv.updated_at else None,
+            }
+            for inv in recent_invoices
+        ]
     }
 

@@ -43,15 +43,16 @@ class Settings(BaseSettings):
     # Plex ERP
     plex_api_url: str
     plex_api_key: str
+    plex_api_key_header: str = "X-Plex-Connect-Api-Key"  # Plex API key header name
     plex_timeout: int = 30
     plex_retry_attempts: int = 3
-    plex_po_endpoint: str = "/purchase-orders"
-    plex_invoice_endpoint: str = "/ap-invoices"
+    plex_po_endpoint: str = "/purchasing/v1/purchase-orders"
+    plex_invoice_endpoint: str = "/accounting/v1/ap-invoices"
     plex_vendor_endpoint: str = "/vendors"
 
     # OpenAI
     openai_api_key: str
-    openai_model: str = "gpt-4-vision-preview"
+    openai_model: str = "gpt-4o"  # Updated from deprecated gpt-4-vision-preview
     openai_max_tokens: int = 2000
     openai_temperature: float = 0.1
 
@@ -86,6 +87,25 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 60
     rate_limit_per_hour: int = 1000
+
+    # Email Integration (PRIMARY DRIVER)
+    email_provider: str = "imap"  # imap or gmail
+    email_imap_server: Optional[str] = None  # e.g., imap.gmail.com
+    email_imap_port: int = 993
+    email_username: Optional[str] = None
+    email_password: Optional[str] = None
+    email_app_password: Optional[str] = None  # For Gmail app passwords
+    email_poll_interval: int = 60  # Seconds between email checks
+    email_inbox_folder: str = "INBOX"
+    email_processed_folder: str = "Processed"  # Move processed emails here
+    email_failed_folder: str = "Failed"  # Move failed emails here
+    email_allowed_senders: Optional[str] = None  # Comma-separated list, empty = accept from anyone
+    email_attachment_extensions: List[str] = ["pdf", "png", "jpg", "jpeg", "tiff"]
+    
+    # Gmail API (alternative to IMAP)
+    gmail_client_id: Optional[str] = None
+    gmail_client_secret: Optional[str] = None
+    gmail_refresh_token: Optional[str] = None
 
     # Feature Flags
     feature_email_integration: bool = True
